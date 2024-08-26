@@ -1,40 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { w3cwebsocket as W3CWebSocket } from 'websocket';
+import axios from 'axios';
+import './Chat.css'; // Import the CSS file for styling
 
 const Chat = () => {
-    const { roomId } = useParams();
     const [messages, setMessages] = useState([]);
-    const [message, setMessage] = useState('');
-
-    const client = new W3CWebSocket(`ws://localhost:8000/ws/chat/${roomId}/`);
+    const [newMessage, setNewMessage] = useState('');
+    const [socket, setSocket] = useState(null);
 
     useEffect(() => {
-        client.onmessage = (message) => {
-            const data = JSON.parse(message.data);
-            setMessages((prevMessages) => [...prevMessages, data.message]);
+        // Initialize WebSocket connection
+        const ws = new WebSocket('ws://localhost:8000/ws/chat/');
+        setSocket(ws);
+
+        // Handle incoming messages
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            setMessages(prevMessages => [...prevMessages, data]);
         };
-    }, [client]);
+
+        // Cleanup on component unmount
+        return () => ws.close();
+    }, []);
 
     const sendMessage = () => {
-        client.send(JSON.stringify({ message }));
-        setMessage('');
+        if (socket && newMessage.trim()) {
+            socket.send(JSON.stringify({ content: newMessage }));
+            setNewMessage('');
+        }
     };
 
     return (
-        <div>
-            <h2>Chat Room</h2>
-            <div>
+        <div className="chat-container">
+            <div className="messages">
                 {messages.map((msg, index) => (
-                    <p key={index}>{msg}</p>
+                    <div key={index} className="message">
+                        <strong>{msg.sender}:</strong> {msg.content}
+                    </div>
                 ))}
             </div>
-            <input 
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-            />
-            <button onClick={sendMessage}>Send</button>
+            <div className="message-input">
+                <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type a message..."
+                />
+                <button onClick={sendMessage}>Send</button>
+            </div>
         </div>
     );
 };

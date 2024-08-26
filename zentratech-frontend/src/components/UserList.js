@@ -6,36 +6,23 @@ const UserList = () => {
 
     useEffect(() => {
         const fetchUsers = async () => {
-            const response = await axios.get('http://localhost:8000/api/users/', {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            setUsers(response.data);
+            try {
+                const response = await axios.get('http://localhost:8000/api/users/');
+                setUsers(response.data);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
         };
 
         fetchUsers();
     }, []);
-
-    const sendInterest = async (userId) => {
-        await axios.post('http://localhost:8000/api/chat/interests/', {
-            recipient: userId,
-        }, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        alert("Interest sent!");
-    };
 
     return (
         <div>
             <h2>User List</h2>
             <ul>
                 {users.map(user => (
-                    <li key={user.id}>
-                        {user.username} <button onClick={() => sendInterest(user.id)}>Send Interest</button>
-                    </li>
+                    <li key={user.id}>{user.username}</li>
                 ))}
             </ul>
         </div>
